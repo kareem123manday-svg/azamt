@@ -1,0 +1,120 @@
+{
+  "theme": "light",
+  "archetype": "6_vibrant_play",
+  "domain": "Islamic Daily Planner / Productivity",
+  "layout": {
+    "direction": "rtl",
+    "language": "ar",
+    "strategy": "mobile-first, centered app-like container (max-w-md or max-w-lg) for the main planner, with heavy padding. Bento-style grid for desktop statistics. Thick borders and rounded elements to mimic Duolingo gamification."
+  },
+  "typography": {
+    "fonts": {
+      "heading": "'Tajawal', sans-serif",
+      "body": "'Tajawal', sans-serif",
+      "mono": "'JetBrains Mono', monospace"
+    },
+    "scale": {
+      "h1": "text-4xl md:text-5xl font-black tracking-tight",
+      "h2": "text-2xl md:text-3xl font-bold tracking-tight",
+      "h3": "text-xl font-bold",
+      "body": "text-base font-medium",
+      "labels": "text-sm font-bold uppercase tracking-wider"
+    },
+    "instructions": "Use Tajawal exclusively for a cohesive, rounded, and friendly Arabic interface. Headings must be heavy (font-bold or font-black). Line-height should be leading-relaxed for Arabic body text to ensure readability with diacritics."
+  },
+  "colors": {
+    "primary": {
+      "DEFAULT": "#1CB05B",
+      "hover": "#179B4F",
+      "active": "#148643",
+      "light": "#E8F7EE"
+    },
+    "secondary": {
+      "DEFAULT": "#FFC800",
+      "hover": "#E5B400",
+      "active": "#CCA000"
+    },
+    "background": {
+      "app": "#F7F7F8",
+      "card": "#FFFFFF",
+      "overlay": "rgba(0,0,0,0.4)"
+    },
+    "text": {
+      "primary": "#374151",
+      "secondary": "#6B7280",
+      "inverse": "#FFFFFF",
+      "accent": "#1CB05B"
+    },
+    "status": {
+      "success": "#58CC02",
+      "warning": "#FF9600",
+      "error": "#FF4B4B",
+      "fajr": "#38BDF8",
+      "dhuhr": "#FBBF24",
+      "asr": "#FB923C",
+      "maghrib": "#F87171",
+      "isha": "#312E81"
+    }
+  },
+  "surface_strategy": {
+    "cards": "Neumorphic tactile variant. Flat white background, border-2 border-gray-200, rounded-2xl, heavy border-b-4. On hover/active: translate-y-[2px], border-b-2 (push-down effect).",
+    "buttons": "Pill-shaped (rounded-full) or ultra-rounded (rounded-2xl). Must have border-b-4 of a darker shade of the background color to look 3D and clickable.",
+    "inputs": "rounded-xl border-2 border-gray-200 bg-gray-50 focus:border-primary focus:bg-white focus:ring-0 transition-colors"
+  },
+  "components": {
+    "buttons": {
+      "primary": "bg-[#1CB05B] text-white border-b-4 border-[#148643] hover:bg-[#179B4F] active:border-b-0 active:translate-y-[4px] rounded-2xl px-6 py-3 font-bold text-lg",
+      "secondary": "bg-white text-gray-700 border-2 border-gray-200 border-b-4 hover:bg-gray-50 active:border-b-2 active:translate-y-[2px] rounded-2xl px-6 py-3 font-bold text-lg"
+    },
+    "timeline": {
+      "container": "relative border-r-4 border-gray-200 ml-4 pl-6 (Note: RTL so border-r becomes border-l mathematically, use border-s-4 or logical properties)",
+      "prayer_node": "absolute -start-3 bg-white border-4 rounded-full w-6 h-6 z-10",
+      "task_card": "mb-4 bg-white border-2 border-gray-200 border-b-4 rounded-2xl p-4 flex items-center justify-between cursor-pointer hover:border-primary"
+    },
+    "badges": {
+      "streak": "flex items-center gap-1 font-bold text-[#FF9600] bg-orange-50 px-3 py-1 rounded-full border-2 border-[#FF9600]"
+    }
+  },
+  "motion": {
+    "button_press": "active:scale-[0.98] transition-transform duration-75",
+    "task_complete": "scale-105 bg-green-50 border-green-500 transition-all duration-300",
+    "page_transition": "animate-in fade-in slide-in-from-bottom-4 duration-500"
+  },
+  "icons_and_assets": {
+    "library": "lucide-react",
+    "instructions": "Use rounded, friendly icons. Adjust strokeWidth to 2.5 for a bolder, gamified look.",
+    "images": {
+      "hero_mascot": {
+        "url": "https://static.prod-images.emergentagent.com/jobs/3db45a41-af67-44ef-b123-f48c15dbd477/images/320e1e78428b4201bf3882ef0bea0895701c1a18547a4e5452505a025d98ba89.png",
+        "description": "Minimalist white mosque with green domes, cute playful style, no faces. Use for empty states or welcome screen."
+      },
+      "achievement_lantern": {
+        "url": "https://static.prod-images.emergentagent.com/jobs/3db45a41-af67-44ef-b123-f48c15dbd477/images/6d81bca7c26fad37b6c60078e04b40e1704c15fd7cf88a60a879e8eaa9d82040.png",
+        "description": "Traditional Ramadan lantern fanous, warm yellow light. Use for badges or high-streak rewards."
+      },
+      "streak_crescent": {
+        "url": "https://static.prod-images.emergentagent.com/jobs/3db45a41-af67-44ef-b123-f48c15dbd477/images/d9898ea6bbd9e5cbad24268f8477905a55bef6d90537bfc96033ed56596d4fd8.png",
+        "description": "Glowing crescent moon and gold stars. Use as a streak icon or for Isha prayer visualization."
+      },
+      "background_pattern": {
+        "url": "https://static.prod-images.emergentagent.com/jobs/3db45a41-af67-44ef-b123-f48c15dbd477/images/fd0624a9af8f360fd2cc3634f2c678fec64d0fd363f35c7f6b5d6735aa85f695.png",
+        "description": "Intricate green and gold islamic geometric pattern. Use as a subtle low-opacity background for header or achievement modals."
+      }
+    }
+  },
+  "accessibility": {
+    "aria_labels_required": true,
+    "contrast_check": "Ensure white text on #1CB05B has sufficient contrast. Use #148643 for borders.",
+    "testing_attributes": "All interactive elements MUST include data-testid (e.g., data-testid='add-task-button', data-testid='prayer-fajr-node')."
+  },
+  "instructions_to_main_agent": [
+    "IMPORTANT: Set <html dir='rtl' lang='ar'> in index.html.",
+    "Include Google Font 'Tajawal' in index.html or import it in CSS.",
+    "Use Tailwind logical properties (ps-, pe-, ms-, me-, border-s) to natively support the RTL layout without breaking when changing sides.",
+    "For gamified cards, always use bottom-heavy borders (border-b-4) to simulate 3D buttons. When active/pressed, remove the border-b or translate down to simulate pressing.",
+    "Group daily tasks visually strictly between the 5 daily prayer times (Fajr, Dhuhr, Asr, Maghrib, Isha). The layout should visually connect these anchors.",
+    "Implement local storage to save streaks and points.",
+    "Ensure NO faces are rendered if any external assets are fetched, abiding by the strict religious requirement.",
+    "Utilize the provided assets for empty states, achievement popups, and UI decoration."
+  ]
+}
