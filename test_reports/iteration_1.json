@@ -1,0 +1,46 @@
+{
+  "summary": "Tested backend prayer-times APIs (4/5 pass) and frontend flows (LocationSetup → HomePage → tasks/achievements/change-location). Backend core endpoints work. Frontend renders correctly in Arabic RTL with Tajawal font and no human/animal faces. However, three integration issues were found: (1) prayer card toggle does not update XP/streak in StatsBar, (2) AddTaskDialog submit button lacks a discoverable data-testid so task creation flow could not be completed via automation, (3) Achievements dialog did not appear to open via [role=dialog] selector when clicking the trophy button.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "GET /api/prayer-times/by-city", "issue": "Returns 200 for clearly invalid cities (e.g., 'ZzzNotARealCity123' / 'Nowhere'). Aladhan upstream returns success, so backend should validate or surface a 404/422 when timings look invalid."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "AddTaskDialog", "issue": "Submit/add button has no recognizable data-testid (tried submit-task-btn, add-task-submit, save-task-btn). Task could not be submitted via automation; task list count stayed at 0.", "selector": "[data-testid='submit-task-btn'] (missing)", "priority": "HIGH"},
+      {"component": "AchievementsPanel/Dialog", "issue": "Clicking [data-testid='open-achievements-btn'] did not produce a visible [role='dialog'] (count=0 after 600ms). Either dialog uses a different role or button click is intercepted.", "selector": "[data-testid='open-achievements-btn']", "priority": "MEDIUM"},
+      {"component": "DialogContent", "issue": "Console warning: 'Missing Description or aria-describedby={undefined} for DialogContent'. Add DialogDescription for accessibility.", "selector": "Radix DialogContent", "priority": "LOW"}
+    ],
+    "integration_issues": [
+      {"flow": "Prayer completion toggle", "issue": "After clicking [data-testid='prayer-card-fajr'], StatsBar still shows '0 نقطة خبرة' and '0 أيام متتالية'. Expected +20 XP and streak bump per HomePage.handlePrayerToggle. Either the card root click isn't wired to onToggle, or there is an inner toggle element that wasn't triggered.", "affected_selectors": ["[data-testid='prayer-card-fajr']"]}
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/backend_test.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "Fix prayer toggle: ensure PrayerCard's onToggle fires on the primary tap target and StatsBar re-renders with new XP/streak.",
+    "Expose submit button in AddTaskDialog with data-testid='submit-task-btn' (and verify task is persisted to localStorage and shown under the chosen slot).",
+    "Verify AchievementsPanel dialog opens; ensure Radix Dialog renders [role='dialog'] and add DialogDescription to silence aria-describedby warning.",
+    "Optionally validate Aladhan response server-side and return 404 for clearly invalid cities."
+  ],
+  "critical_code_review_comments": [
+    "HomePage.handlePrayerToggle untoggle branch uses stale closure state `stats` for XP subtraction instead of reading latest stats; can cause negative drift.",
+    "storage.bumpStreak mutates the object returned by getStats then saves – fine, but HomePage doesn't store the returned object, so streak is only reflected on next render via getStats elsewhere. Confirm StatsBar receives updated streak.",
+    "server.py: invalid city handling relies entirely on Aladhan; consider checking timings sanity or `data.code != 200` before returning success.",
+    "AddTaskDialog and AchievementsPanel components were not viewed in this iteration – ensure they expose data-testid on submit and dialog content."
+  ],
+  "updated_files": [
+    "/app/backend/tests/backend_test.py"
+  ],
+  "success_rate": {"backend": "80%", "frontend": "60%"},
+  "test_credentials": "N/A - no auth (localStorage only)",
+  "seed_data_creation": "None",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Backend tests live at /app/backend/tests/backend_test.py and pass 4/5 (invalid-city test failing because Aladhan returns 200). Frontend RTL/Tajawal/mascot/popular cities/change-location all verified. Remaining flows to re-test once main agent fixes the three integration bugs: prayer toggle XP, AddTaskDialog submit, AchievementsPanel dialog.",
+  "rca of the issue": "Prayer toggle: likely the click handler is bound to an inner element (e.g., a checkbox circle) and clicking the card root doesn't propagate to onToggle. AddTaskDialog submit: button likely uses text 'إضافة' without data-testid. Achievements: button click may not be opening Radix Dialog due to event bubbling from sticky header or showAchievements state not being applied; needs source inspection of AchievementsPanel/HomePage Dialog wiring."
+}
