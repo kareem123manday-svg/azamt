@@ -6,7 +6,11 @@ export default function PrayerCard({ prayer, time, done, isCurrent, isPast, onTo
   const Icon = ICONS[prayer.icon] || Sun;
   return (
     <div
-      className={`relative card-3d p-4 flex items-center gap-3 ${isCurrent ? "border-emerald-500 border-b-4 ring-2 ring-emerald-100" : ""} ${done ? "bg-emerald-50" : ""}`}
+      role="button"
+      tabIndex={0}
+      onClick={onToggle}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onToggle(); } }}
+      className={`relative card-3d p-4 flex items-center gap-3 cursor-pointer select-none ${isCurrent ? "border-emerald-500 border-b-4 ring-2 ring-emerald-100" : ""} ${done ? "bg-emerald-50" : ""}`}
       data-testid={`prayer-card-${prayer.key}`}
     >
       <div
@@ -32,7 +36,7 @@ export default function PrayerCard({ prayer, time, done, isCurrent, isPast, onTo
         </p>
       </div>
       <button
-        onClick={onToggle}
+        onClick={(e) => { e.stopPropagation(); onToggle(); }}
         data-testid={`toggle-prayer-${prayer.key}`}
         aria-label={`تسجيل صلاة ${prayer.name}`}
         className={`flex-shrink-0 w-12 h-12 rounded-2xl border-2 border-b-4 flex items-center justify-center font-bold btn-3d transition-colors ${

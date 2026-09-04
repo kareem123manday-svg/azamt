@@ -2,14 +2,18 @@ import { useState, useEffect } from "react";
 import { Toaster } from "sonner";
 import HomePage from "@/pages/HomePage";
 import LocationSetup from "@/pages/LocationSetup";
-import { getLocation } from "@/lib/storage";
+import NameSetup from "@/pages/NameSetup";
+import { getLocation, getUser } from "@/lib/storage";
 
 function App() {
+  const [user, setUser] = useState(null);
   const [location, setLocation] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const u = getUser();
     const loc = getLocation();
+    setUser(u.name ? u : null);
     setLocation(loc);
     setLoading(false);
   }, []);
@@ -24,24 +28,43 @@ function App() {
     );
   }
 
+  const toasterEl = (
+    <Toaster
+      position="top-center"
+      richColors
+      toastOptions={{
+        style: { fontFamily: "'Tajawal', sans-serif", direction: "rtl", textAlign: "right" },
+      }}
+    />
+  );
+
+  if (!user) {
+    return (
+      <>
+        {toasterEl}
+        <NameSetup onDone={setUser} />
+      </>
+    );
+  }
+
+  if (!location) {
+    return (
+      <>
+        {toasterEl}
+        <LocationSetup onLocationSet={setLocation} />
+      </>
+    );
+  }
+
   return (
     <>
-      <Toaster
-        position="top-center"
-        richColors
-        toastOptions={{
-          style: {
-            fontFamily: "'Tajawal', sans-serif",
-            direction: "rtl",
-            textAlign: "right",
-          },
-        }}
+      {toasterEl}
+      <HomePage
+        user={user}
+        location={location}
+        onChangeLocation={() => setLocation(null)}
+        onChangeUser={(u) => setUser(u)}
       />
-      {!location ? (
-        <LocationSetup onLocationSet={setLocation} />
-      ) : (
-        <HomePage location={location} onChangeLocation={() => setLocation(null)} />
-      )}
     </>
   );
 }

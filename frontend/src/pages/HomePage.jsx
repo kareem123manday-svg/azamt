@@ -7,6 +7,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
@@ -19,6 +20,8 @@ import {
   addXP,
   getPrayersDone,
   savePrayersDone,
+  checkNewDay,
+  todayKey,
 } from "@/lib/storage";
 import { PRAYERS, SLOTS, getCurrentSlot, getNextPrayer } from "@/lib/prayers";
 import PrayerCard from "@/components/PrayerCard";
@@ -40,13 +43,15 @@ const ACHIEVEMENTS = [
   { id: "xp_100", title: "١٠٠ نقطة خبرة", desc: "اجمع ١٠٠ نقطة خبرة", check: (s) => s.xp >= 100 },
 ];
 
-export default function HomePage({ location, onChangeLocation }) {
+export default function HomePage({ user, location, onChangeLocation, onChangeUser }) {
   const [times, setTimes] = useState(null);
   const [loading, setLoading] = useState(true);
   const [tasks, setTasks] = useState(getTasks());
   const [stats, setStats] = useState(getStats());
   const [prayersDone, setPrayersDone] = useState(getPrayersDone());
   const [showAchievements, setShowAchievements] = useState(false);
+  const [newDayInfo, setNewDayInfo] = useState(null);
+  const [currentDate, setCurrentDate] = useState(todayKey());
   const [addOpen, setAddOpen] = useState(false);
   const [addSlot, setAddSlot] = useState(null);
   const [confetti, setConfetti] = useState(0);
@@ -70,7 +75,40 @@ export default function HomePage({ location, onChangeLocation }) {
       }
     };
     fetchTimes();
-  }, [location]);
+  }, [location, currentDate]);
+
+  // New day detection: on mount, on visibility, and every 60s
+  useEffect(() => {
+    const handleDayCheck = () => {
+      const info = checkNewDay();
+      const nowKey = todayKey();
+      if (info.isNewDay) {
+        setNewDayInfo(info);
+        setTasks(getTasks());
+        setPrayersDone(getPrayersDone());
+        setStats(getStats());
+        setCurrentDate(nowKey);
+        if (info.streakBroken) {
+          toast.warning("انقطعت سلسلة أيامك، لا بأس! ابدأ من جديد اليوم", { duration: 5000 });
+        } else {
+          toast.success("يوم جديد مبارك! أعدّ خطتك واكسب النقاط", { duration: 4000 });
+        }
+      } else if (nowKey !== currentDate) {
+        // Date rolled over silently – re-sync
+        setCurrentDate(nowKey);
+        setTasks(getTasks());
+        setPrayersDone(getPrayersDone());
+      }
+    };
+    handleDayCheck();
+    const onVisible = () => document.visibilityState === "visible" && handleDayCheck();
+    document.addEventListener("visibilitychange", onVisible);
+    const interval = setInterval(handleDayCheck, 60000);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisible);
+      clearInterval(interval);
+    };
+  }, [currentDate]);
 
   const currentSlot = useMemo(() => (times ? getCurrentSlot(times) : "fajr"), [times]);
   const nextPrayer = useMemo(() => (times ? getNextPrayer(times) : null), [times]);
@@ -112,7 +150,8 @@ export default function HomePage({ location, onChangeLocation }) {
       toast.success(`أحسنت! تم تسجيل صلاة ${prayerName}`, { description: "+٢٠ نقطة خبرة" });
       checkAchievements(newStats, next);
     } else {
-      const newStats = { ...stats, xp: Math.max(0, stats.xp - 20), totalPrayersDone: Math.max(0, (stats.totalPrayersDone || 0) - 1) };
+      const latest = getStats();
+      const newStats = { ...latest, xp: Math.max(0, latest.xp - 20), totalPrayersDone: Math.max(0, (latest.totalPrayersDone || 0) - 1) };
       saveStats(newStats);
       setStats(newStats);
     }
@@ -147,7 +186,8 @@ export default function HomePage({ location, onChangeLocation }) {
       toast.success("أحسنت! +١٠ نقاط خبرة");
       checkAchievements(newStats, prayersDone);
     } else {
-      const newStats = { ...stats, xp: Math.max(0, stats.xp - 10), totalTasksDone: Math.max(0, (stats.totalTasksDone || 0) - 1) };
+      const latest = getStats();
+      const newStats = { ...latest, xp: Math.max(0, latest.xp - 10), totalTasksDone: Math.max(0, (latest.totalTasksDone || 0) - 1) };
       saveStats(newStats);
       setStats(newStats);
     }
@@ -203,7 +243,23 @@ export default function HomePage({ location, onChangeLocation }) {
               className="w-10 h-10 object-contain"
             />
             <div>
-              <h1 className="text-base md:text-lg font-black text-gray-800 leading-tight">منظم الصلاة</h1>
+              <button
+                type="button"
+                onClick={() => {
+                  const newName = prompt("عدّل اسمك:", user?.name || "");
+                  if (newName && newName.trim()) {
+                    const updated = { ...user, name: newName.trim() };
+                    localStorage.setItem("salah_first_user", JSON.stringify(updated));
+                    onChangeUser?.(updated);
+                    toast.success("تم تحديث اسمك");
+                  }
+                }}
+                className="text-base md:text-lg font-black text-gray-800 leading-tight hover:text-emerald-600 transition-colors text-right"
+                data-testid="greeting"
+                aria-label="تعديل الاسم"
+              >
+                أهلاً، {user?.name || "بك"} 👋
+              </button>
               <p className="text-xs text-gray-500 leading-tight">{times?.date_hijri}</p>
             </div>
           </div>
@@ -302,11 +358,56 @@ export default function HomePage({ location, onChangeLocation }) {
       />
 
       <Dialog open={showAchievements} onOpenChange={setShowAchievements}>
-        <DialogContent className="max-w-md" dir="rtl">
+        <DialogContent className="max-w-md" dir="rtl" data-testid="achievements-dialog">
           <DialogHeader>
             <DialogTitle className="text-2xl font-black text-gray-800 text-center">الإنجازات</DialogTitle>
+            <DialogDescription className="text-center text-sm text-gray-500">إنجازاتك المكتسبة من إكمال الصلوات والمهام</DialogDescription>
           </DialogHeader>
           <AchievementsPanel achievements={ACHIEVEMENTS} earned={stats.achievements || []} />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!newDayInfo} onOpenChange={(o) => !o && setNewDayInfo(null)}>
+        <DialogContent className="max-w-sm rounded-3xl" dir="rtl" data-testid="new-day-dialog">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-black text-emerald-700 text-center">🌅 يوم جديد</DialogTitle>
+            <DialogDescription className="text-center text-sm text-gray-500">
+              مرحباً بك يا {user?.name} في يومك الجديد
+            </DialogDescription>
+          </DialogHeader>
+          {newDayInfo?.yesterdaySummary && (
+            <div className="bg-emerald-50 border-2 border-emerald-200 rounded-2xl p-4 space-y-2" data-testid="yesterday-summary">
+              <p className="font-bold text-emerald-800 text-sm text-center">ملخص أمس:</p>
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div>
+                  <p className="text-2xl font-black text-emerald-700">{newDayInfo.yesterdaySummary.prayersDone}/5</p>
+                  <p className="text-[11px] font-bold text-gray-500">صلوات</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-black text-emerald-700">
+                    {newDayInfo.yesterdaySummary.tasksDone}/{newDayInfo.yesterdaySummary.tasksTotal}
+                  </p>
+                  <p className="text-[11px] font-bold text-gray-500">مهام</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-black text-amber-600">+{newDayInfo.yesterdaySummary.xpEarned}</p>
+                  <p className="text-[11px] font-bold text-gray-500">خبرة</p>
+                </div>
+              </div>
+            </div>
+          )}
+          {newDayInfo?.streakBroken && (
+            <div className="bg-orange-50 border-2 border-orange-200 rounded-2xl p-3 text-center">
+              <p className="text-sm font-bold text-orange-700">انقطعت سلسلتك، لا بأس - كل يوم فرصة جديدة</p>
+            </div>
+          )}
+          <Button
+            onClick={() => setNewDayInfo(null)}
+            data-testid="dismiss-new-day-btn"
+            className="w-full bg-[#1CB05B] hover:bg-[#179B4F] text-white border-b-4 border-[#148643] active:border-b-0 active:translate-y-[3px] rounded-2xl font-bold py-5"
+          >
+            هيّا نبدأ اليوم
+          </Button>
         </DialogContent>
       </Dialog>
     </div>

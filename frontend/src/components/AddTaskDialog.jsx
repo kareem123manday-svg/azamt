@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SLOTS } from "@/lib/prayers";
@@ -37,6 +37,7 @@ export default function AddTaskDialog({ open, onOpenChange, defaultSlot, onAdd }
       <DialogContent className="max-w-md rounded-3xl" dir="rtl" data-testid="add-task-dialog">
         <DialogHeader>
           <DialogTitle className="text-2xl font-black text-gray-800 text-right">عمل جديد</DialogTitle>
+          <DialogDescription className="text-right text-sm text-gray-500">أضف مهمة جديدة بين الصلوات لتنظيم يومك</DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <div>
@@ -96,7 +97,7 @@ export default function AddTaskDialog({ open, onOpenChange, defaultSlot, onAdd }
             <Button
               onClick={submit}
               disabled={!title.trim()}
-              data-testid="submit-add-task-btn"
+              data-testid="submit-task-btn"
               className="flex-1 bg-[#1CB05B] hover:bg-[#179B4F] text-white border-b-4 border-[#148643] active:border-b-0 active:translate-y-[3px] rounded-xl font-bold disabled:opacity-50"
             >
               إضافة
