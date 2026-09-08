@@ -134,13 +134,36 @@ export default function HomePage({ user, location, onChangeLocation, onChangeUse
 
   const triggerConfetti = () => setConfetti((c) => c + 1);
 
+  // Check if the day is fully complete: all 5 prayers done AND all tasks done
+  const isDayComplete = (t, p) => {
+    const allPrayers = Object.values(p).filter(Boolean).length >= 5;
+    const allTasks = t.length === 0 || t.every((task) => task.done);
+    return allPrayers && allTasks;
+  };
+
+  // Called after any toggle - bumps streak once if day just became complete
+  const maybeCompleteDay = (nextTasks, nextPrayers) => {
+    if (!isDayComplete(nextTasks, nextPrayers)) return;
+    const before = getStats();
+    if (before.lastActiveDate === todayKey()) return; // already counted today
+    const after = bumpStreak();
+    setStats(after);
+    triggerConfetti();
+    setTimeout(triggerConfetti, 300);
+    setTimeout(triggerConfetti, 600);
+    toast.success("🎉 اكتمل يومك!", {
+      description: `أتممت كل صلواتك وأعمالك — سلسلتك الآن ${after.streak} يوم${after.streak > 2 ? "اً" : ""}`,
+      duration: 5000,
+    });
+    checkAchievements(after, nextPrayers);
+  };
+
   const handlePrayerToggle = (key) => {
     const next = { ...prayersDone, [key]: !prayersDone[key] };
     setPrayersDone(next);
     savePrayersDone(next);
 
     if (next[key]) {
-      bumpStreak();
       const newStats = addXP(20);
       newStats.totalPrayersDone = (newStats.totalPrayersDone || 0) + 1;
       saveStats(newStats);
@@ -149,6 +172,7 @@ export default function HomePage({ user, location, onChangeLocation, onChangeUse
       const prayerName = PRAYERS.find((p) => p.key === key)?.name;
       toast.success(`أحسنت! تم تسجيل صلاة ${prayerName}`, { description: "+٢٠ نقطة خبرة" });
       checkAchievements(newStats, next);
+      maybeCompleteDay(tasks, next);
     } else {
       const latest = getStats();
       const newStats = { ...latest, xp: Math.max(0, latest.xp - 20), totalPrayersDone: Math.max(0, (latest.totalPrayersDone || 0) - 1) };
@@ -177,7 +201,6 @@ export default function HomePage({ user, location, onChangeLocation, onChangeUse
     saveTasks(next);
     const task = next.find((t) => t.id === id);
     if (task.done) {
-      bumpStreak();
       const newStats = addXP(10);
       newStats.totalTasksDone = (newStats.totalTasksDone || 0) + 1;
       saveStats(newStats);
@@ -185,6 +208,7 @@ export default function HomePage({ user, location, onChangeLocation, onChangeUse
       triggerConfetti();
       toast.success("أحسنت! +١٠ نقاط خبرة");
       checkAchievements(newStats, prayersDone);
+      maybeCompleteDay(next, prayersDone);
     } else {
       const latest = getStats();
       const newStats = { ...latest, xp: Math.max(0, latest.xp - 10), totalTasksDone: Math.max(0, (latest.totalTasksDone || 0) - 1) };
@@ -220,6 +244,15 @@ export default function HomePage({ user, location, onChangeLocation, onChangeUse
     });
     return map;
   }, [tasks]);
+
+  const dayProgress = useMemo(() => {
+    const prayersCount = Object.values(prayersDone).filter(Boolean).length;
+    const tasksDoneCount = tasks.filter((t) => t.done).length;
+    return {
+      done: prayersCount + tasksDoneCount,
+      total: 5 + tasks.length,
+    };
+  }, [tasks, prayersDone]);
 
   if (loading) {
     return (
@@ -287,7 +320,7 @@ export default function HomePage({ user, location, onChangeLocation, onChangeUse
       </header>
 
       <main className="max-w-2xl mx-auto px-4 pt-4">
-        <StatsBar stats={stats} nextPrayer={nextPrayer} />
+        <StatsBar stats={stats} nextPrayer={nextPrayer} dayProgress={dayProgress} />
 
         <div className="mt-6 space-y-1" data-testid="timeline">
           {PRAYERS.map((prayer, idx) => {
