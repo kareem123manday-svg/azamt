@@ -397,7 +397,7 @@ export default function HomePage({ user, location, onChangeLocation, onChangeUse
           setAddOpen(true);
         }}
         data-testid="floating-add-btn"
-        className="fixed bottom-6 start-6 bg-[#1CB05B] hover:bg-[#179B4F] text-white border-b-4 border-[#148643] active:border-b-0 active:translate-y-[3px] rounded-2xl px-5 py-3 font-bold shadow-lg flex items-center gap-2 btn-3d z-20"
+        className="fixed bottom-6 start-6 bg-[#1CB05B] hover:bg-[#179B4F] text-white border-b-4 border-[#148643] active:border-b-2 active:translate-y-[2px] rounded-2xl px-5 py-3 font-bold shadow-lg flex items-center gap-2 btn-3d z-20"
       >
         <Plus className="w-5 h-5" strokeWidth={3} />
         مهمة جديدة
@@ -461,7 +461,7 @@ export default function HomePage({ user, location, onChangeLocation, onChangeUse
           <Button
             onClick={() => setNewDayInfo(null)}
             data-testid="dismiss-new-day-btn"
-            className="w-full bg-[#1CB05B] hover:bg-[#179B4F] text-white border-b-4 border-[#148643] active:border-b-0 active:translate-y-[3px] rounded-2xl font-bold py-5"
+            className="w-full bg-[#1CB05B] hover:bg-[#179B4F] text-white border-b-4 border-[#148643] active:border-b-2 active:translate-y-[2px] rounded-2xl font-bold py-5"
           >
             هيّا نبدأ اليوم
           </Button>

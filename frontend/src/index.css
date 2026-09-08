@@ -56,7 +56,7 @@ body {
 /* Custom utilities for the Duolingo-style gamified UI */
 @layer components {
     .btn-3d {
-        @apply transition-all duration-75 active:translate-y-[3px] active:border-b-0;
+        @apply transition-all duration-75 active:translate-y-[2px] active:border-b-2;
     }
 
     .card-3d {

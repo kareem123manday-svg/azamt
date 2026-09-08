@@ -57,7 +57,7 @@ export default function NameSetup({ onDone, onBack }) {
               onClick={submit}
               disabled={!name.trim()}
               data-testid="save-name-btn"
-              className="w-full bg-[#1CB05B] hover:bg-[#179B4F] text-white border-b-4 border-[#148643] active:border-b-0 active:translate-y-[3px] rounded-2xl px-6 py-6 font-bold text-base btn-3d disabled:opacity-50"
+              className="w-full bg-[#1CB05B] hover:bg-[#179B4F] text-white border-b-4 border-[#148643] active:border-b-2 active:translate-y-[2px] rounded-2xl px-6 py-6 font-bold text-base btn-3d disabled:opacity-50"
             >
               متابعة
             </Button>

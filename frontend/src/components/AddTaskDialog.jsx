@@ -208,7 +208,7 @@ export default function AddTaskDialog({ open, onOpenChange, defaultSlot, onAdd, 
               onClick={submit}
               disabled={!title.trim() || (repeatMode === "custom" && customDays.length === 0)}
               data-testid="submit-task-btn"
-              className="flex-1 bg-[#1CB05B] hover:bg-[#179B4F] text-white border-b-4 border-[#148643] active:border-b-0 active:translate-y-[3px] rounded-xl font-bold disabled:opacity-50"
+              className="flex-1 bg-[#1CB05B] hover:bg-[#179B4F] text-white border-b-4 border-[#148643] active:border-b-2 active:translate-y-[2px] rounded-xl font-bold disabled:opacity-50"
             >
               {isEditing ? "حفظ" : "إضافة"}
             </Button>

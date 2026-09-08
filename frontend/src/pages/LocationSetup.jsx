@@ -105,7 +105,7 @@ export default function LocationSetup({ onLocationSet }) {
               onClick={handleGeolocation}
               disabled={loading}
               data-testid="use-geolocation-btn"
-              className="w-full bg-[#1CB05B] hover:bg-[#179B4F] text-white border-b-4 border-[#148643] active:border-b-0 active:translate-y-[3px] rounded-2xl px-6 py-6 font-bold text-base btn-3d disabled:opacity-50"
+              className="w-full bg-[#1CB05B] hover:bg-[#179B4F] text-white border-b-4 border-[#148643] active:border-b-2 active:translate-y-[2px] rounded-2xl px-6 py-6 font-bold text-base btn-3d disabled:opacity-50"
             >
               {loading ? <Loader2 className="w-5 h-5 ms-2 animate-spin" /> : <MapPin className="w-5 h-5 ms-2" strokeWidth={2.5} />}
               استخدم موقعي الحالي
