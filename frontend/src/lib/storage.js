@@ -6,30 +6,93 @@ const KEYS = {
   PRAYERS_DONE: "salah_first_prayers_done",
   USER: "salah_first_user",
   HISTORY: "salah_first_history",
+  TASK_DONE: "salah_first_task_done", // per-day map of {taskId: true}
 };
 
 export const todayKey = () => new Date().toISOString().slice(0, 10);
 export const daysBetween = (a, b) => Math.round((new Date(b) - new Date(a)) / 86400000);
 
-// Tasks: array of { id, title, slot, done, createdAt }
-// slot: 'fajr' | 'dhuhr' | 'asr' | 'maghrib' | 'isha' | 'night'
-export const getTasks = () => {
+// --- One-time migration: convert legacy per-day tasks format to global list ---
+const migrateTasksIfNeeded = () => {
   try {
-    const all = JSON.parse(localStorage.getItem(KEYS.TASKS) || "{}");
-    return all[todayKey()] || [];
+    const raw = localStorage.getItem(KEYS.TASKS);
+    if (!raw) return;
+    const parsed = JSON.parse(raw);
+    // Legacy format was { "YYYY-MM-DD": [ ... ] }. New format is an array.
+    if (Array.isArray(parsed)) return;
+    if (parsed && typeof parsed === "object") {
+      const dates = Object.keys(parsed).sort();
+      const latest = dates.length ? parsed[dates[dates.length - 1]] : [];
+      const globalTasks = (latest || []).map((t) => ({
+        id: t.id,
+        title: t.title,
+        slot: t.slot,
+        createdAt: t.createdAt || Date.now(),
+      }));
+      localStorage.setItem(KEYS.TASKS, JSON.stringify(globalTasks));
+    }
+  } catch {
+    /* ignore */
+  }
+};
+migrateTasksIfNeeded();
+
+// Tasks now GLOBAL: array of { id, title, slot, createdAt }
+// The "done" state is stored per-day in TASK_DONE
+export const getTasksList = () => {
+  try {
+    const list = JSON.parse(localStorage.getItem(KEYS.TASKS) || "[]");
+    return Array.isArray(list) ? list : [];
   } catch {
     return [];
   }
 };
 
-export const saveTasks = (tasks) => {
-  const all = JSON.parse(localStorage.getItem(KEYS.TASKS) || "{}");
-  all[todayKey()] = tasks;
-  // Keep only last 30 days
-  const keys = Object.keys(all).sort().slice(-30);
+export const saveTasksList = (tasks) => {
+  localStorage.setItem(KEYS.TASKS, JSON.stringify(tasks));
+};
+
+// Per-day done map: { "YYYY-MM-DD": { taskId: true } }
+export const getTaskDoneMap = () => {
+  try {
+    const all = JSON.parse(localStorage.getItem(KEYS.TASK_DONE) || "{}");
+    return all[todayKey()] || {};
+  } catch {
+    return {};
+  }
+};
+
+export const saveTaskDoneMap = (doneMap) => {
+  const all = JSON.parse(localStorage.getItem(KEYS.TASK_DONE) || "{}");
+  all[todayKey()] = doneMap;
+  // Keep last 60 days
+  const keys = Object.keys(all).sort().slice(-60);
   const trimmed = {};
   keys.forEach((k) => (trimmed[k] = all[k]));
-  localStorage.setItem(KEYS.TASKS, JSON.stringify(trimmed));
+  localStorage.setItem(KEYS.TASK_DONE, JSON.stringify(trimmed));
+};
+
+// Returns today's tasks merged with per-day done state
+export const getTasks = () => {
+  const list = getTasksList();
+  const doneMap = getTaskDoneMap();
+  return list.map((t) => ({ ...t, done: !!doneMap[t.id] }));
+};
+
+// Persist: split tasks into definition list + today's done map
+export const saveTasks = (tasks) => {
+  const list = tasks.map(({ id, title, slot, createdAt }) => ({
+    id,
+    title,
+    slot,
+    createdAt: createdAt || Date.now(),
+  }));
+  saveTasksList(list);
+  const doneMap = {};
+  tasks.forEach((t) => {
+    if (t.done) doneMap[t.id] = true;
+  });
+  saveTaskDoneMap(doneMap);
 };
 
 export const getPrayersDone = () => {
@@ -156,16 +219,17 @@ const saveHistory = (history) => {
 // Archive a specific day's activity into history (called when day rolls over)
 const archiveDay = (dateKey) => {
   try {
-    const allTasks = JSON.parse(localStorage.getItem(KEYS.TASKS) || "{}");
+    const tasksList = getTasksList();
+    const allTaskDone = JSON.parse(localStorage.getItem(KEYS.TASK_DONE) || "{}");
     const allPrayers = JSON.parse(localStorage.getItem(KEYS.PRAYERS_DONE) || "{}");
-    const tasks = allTasks[dateKey] || [];
+    const doneMap = allTaskDone[dateKey] || {};
     const prayers = allPrayers[dateKey] || {};
-    const tasksDone = tasks.filter((t) => t.done).length;
+    const tasksDone = tasksList.filter((t) => doneMap[t.id]).length;
     const prayersDone = Object.values(prayers).filter(Boolean).length;
     const xpEarned = tasksDone * 10 + prayersDone * 20;
     const history = getHistory();
     history[dateKey] = {
-      tasksTotal: tasks.length,
+      tasksTotal: tasksList.length,
       tasksDone,
       prayersDone,
       xpEarned,
