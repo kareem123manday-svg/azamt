@@ -23,7 +23,7 @@ import {
   checkNewDay,
   todayKey,
 } from "@/lib/storage";
-import { PRAYERS, SLOTS, getCurrentSlot, getNextPrayer } from "@/lib/prayers";
+import { PRAYERS, SLOTS, getCurrentSlot, getNextPrayer, isTaskActiveToday } from "@/lib/prayers";
 import PrayerCard from "@/components/PrayerCard";
 import TaskCard from "@/components/TaskCard";
 import AddTaskDialog from "@/components/AddTaskDialog";
@@ -54,6 +54,7 @@ export default function HomePage({ user, location, onChangeLocation, onChangeUse
   const [currentDate, setCurrentDate] = useState(todayKey());
   const [addOpen, setAddOpen] = useState(false);
   const [addSlot, setAddSlot] = useState(null);
+  const [editingTask, setEditingTask] = useState(null);
   const [confetti, setConfetti] = useState(0);
 
   // Fetch prayer times
@@ -134,10 +135,11 @@ export default function HomePage({ user, location, onChangeLocation, onChangeUse
 
   const triggerConfetti = () => setConfetti((c) => c + 1);
 
-  // Check if the day is fully complete: all 5 prayers done AND all tasks done
+  // Check if the day is fully complete: all 5 prayers done AND all ACTIVE-TODAY tasks done
   const isDayComplete = (t, p) => {
+    const activeToday = t.filter((task) => isTaskActiveToday(task));
     const allPrayers = Object.values(p).filter(Boolean).length >= 5;
-    const allTasks = t.length === 0 || t.every((task) => task.done);
+    const allTasks = activeToday.length === 0 || activeToday.every((task) => task.done);
     return allPrayers && allTasks;
   };
 
@@ -181,11 +183,22 @@ export default function HomePage({ user, location, onChangeLocation, onChangeUse
     }
   };
 
-  const handleAddTask = (title, slot) => {
+  const handleAddTask = ({ title, slot, days }) => {
+    if (editingTask) {
+      const next = tasks.map((t) =>
+        t.id === editingTask.id ? { ...t, title, slot, days: days || null } : t
+      );
+      setTasks(next);
+      saveTasks(next);
+      setEditingTask(null);
+      toast.success("تم تحديث المهمة");
+      return;
+    }
     const newTask = {
       id: Date.now().toString(),
-      title: title.trim(),
+      title,
       slot,
+      days: days || null,
       done: false,
       createdAt: Date.now(),
     };
@@ -240,19 +253,21 @@ export default function HomePage({ user, location, onChangeLocation, onChangeUse
   const tasksBySlot = useMemo(() => {
     const map = { fajr: [], dhuhr: [], asr: [], maghrib: [], isha: [] };
     tasks.forEach((t) => {
-      if (map[t.slot]) map[t.slot].push(t);
+      if (map[t.slot] && isTaskActiveToday(t)) map[t.slot].push(t);
     });
     return map;
   }, [tasks]);
 
+  const activeTasks = useMemo(() => tasks.filter((t) => isTaskActiveToday(t)), [tasks]);
+
   const dayProgress = useMemo(() => {
     const prayersCount = Object.values(prayersDone).filter(Boolean).length;
-    const tasksDoneCount = tasks.filter((t) => t.done).length;
+    const tasksDoneCount = activeTasks.filter((t) => t.done).length;
     return {
       done: prayersCount + tasksDoneCount,
-      total: 5 + tasks.length,
+      total: 5 + activeTasks.length,
     };
-  }, [tasks, prayersDone]);
+  }, [activeTasks, prayersDone]);
 
   if (loading) {
     return (
@@ -344,6 +359,11 @@ export default function HomePage({ user, location, onChangeLocation, onChangeUse
                       task={task}
                       onToggle={() => handleToggleTask(task.id)}
                       onDelete={() => handleDeleteTask(task.id)}
+                      onEdit={() => {
+                        setEditingTask(task);
+                        setAddSlot(task.slot);
+                        setAddOpen(true);
+                      }}
                       onMoveUp={() => handleMoveTask(task.id, -1)}
                       onMoveDown={() => handleMoveTask(task.id, 1)}
                     />
@@ -385,8 +405,12 @@ export default function HomePage({ user, location, onChangeLocation, onChangeUse
 
       <AddTaskDialog
         open={addOpen}
-        onOpenChange={setAddOpen}
+        onOpenChange={(o) => {
+          setAddOpen(o);
+          if (!o) setEditingTask(null);
+        }}
         defaultSlot={addSlot}
+        initialTask={editingTask}
         onAdd={handleAddTask}
       />
 

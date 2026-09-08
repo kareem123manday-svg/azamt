@@ -15,6 +15,32 @@ export const SLOTS = [
   { key: "isha", label: "بعد العشاء" },
 ];
 
+// Days of week - JS Date.getDay(): 0=Sun ... 6=Sat
+// Displayed ordering starts Saturday (Arab week convention)
+export const WEEK_DAYS = [
+  { key: 6, label: "السبت", short: "س" },
+  { key: 0, label: "الأحد", short: "ح" },
+  { key: 1, label: "الاثنين", short: "ن" },
+  { key: 2, label: "الثلاثاء", short: "ث" },
+  { key: 3, label: "الأربعاء", short: "ر" },
+  { key: 4, label: "الخميس", short: "خ" },
+  { key: 5, label: "الجمعة", short: "ج" },
+];
+
+export const todayDayOfWeek = () => new Date().getDay();
+
+// A task is active today if it has no `days` restriction OR today is included
+export const isTaskActiveToday = (task, day = todayDayOfWeek()) => {
+  if (!task.days || !Array.isArray(task.days) || task.days.length === 0) return true;
+  return task.days.includes(day);
+};
+
+export const daysLabel = (days) => {
+  if (!days || days.length === 0 || days.length === 7) return "كل يوم";
+  if (days.length === 1) return WEEK_DAYS.find((d) => d.key === days[0])?.label || "";
+  return WEEK_DAYS.filter((d) => days.includes(d.key)).map((d) => d.short).join("، ");
+};
+
 // Convert HH:MM to minutes since midnight
 export const toMinutes = (hhmm) => {
   if (!hhmm) return 0;
