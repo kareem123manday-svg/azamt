@@ -12,6 +12,18 @@ const KEYS = {
 export const todayKey = () => new Date().toISOString().slice(0, 10);
 export const daysBetween = (a, b) => Math.round((new Date(b) - new Date(a)) / 86400000);
 
+/**
+ * Storage security note: this app is intentionally client-only (no auth,
+ * no server-side accounts, no PII). Values here (name, tasks, prayer/task
+ * done flags, streaks) are user-owned local data. localStorage is the right
+ * tool for the job. The try/catch wrappers below guard against corrupted
+ * JSON only; we log to the console for debuggability.
+ */
+const warn = (context, err) => {
+  // eslint-disable-next-line no-console
+  console.warn(`[storage] ${context}:`, err);
+};
+
 // --- One-time migration: convert legacy per-day tasks format to global list ---
 const migrateTasksIfNeeded = () => {
   try {
@@ -31,8 +43,8 @@ const migrateTasksIfNeeded = () => {
       }));
       localStorage.setItem(KEYS.TASKS, JSON.stringify(globalTasks));
     }
-  } catch {
-    /* ignore */
+  } catch (err) {
+    warn('migrate', err);
   }
 };
 migrateTasksIfNeeded();
@@ -43,7 +55,8 @@ export const getTasksList = () => {
   try {
     const list = JSON.parse(localStorage.getItem(KEYS.TASKS) || "[]");
     return Array.isArray(list) ? list : [];
-  } catch {
+  } catch (err) {
+    warn('getTasksList', err);
     return [];
   }
 };
@@ -57,7 +70,8 @@ export const getTaskDoneMap = () => {
   try {
     const all = JSON.parse(localStorage.getItem(KEYS.TASK_DONE) || "{}");
     return all[todayKey()] || {};
-  } catch {
+  } catch (err) {
+    warn("getTaskDoneMap", err);
     return {};
   }
 };
@@ -81,10 +95,11 @@ export const getTasks = () => {
 
 // Persist: split tasks into definition list + today's done map
 export const saveTasks = (tasks) => {
-  const list = tasks.map(({ id, title, slot, createdAt }) => ({
+  const list = tasks.map(({ id, title, slot, days, createdAt }) => ({
     id,
     title,
     slot,
+    days: days ?? null,
     createdAt: createdAt || Date.now(),
   }));
   saveTasksList(list);
@@ -99,7 +114,8 @@ export const getPrayersDone = () => {
   try {
     const all = JSON.parse(localStorage.getItem(KEYS.PRAYERS_DONE) || "{}");
     return all[todayKey()] || {};
-  } catch {
+  } catch (err) {
+    warn("getPrayersDone", err);
     return {};
   }
 };
@@ -124,7 +140,8 @@ export const getStats = () => {
   try {
     const s = JSON.parse(localStorage.getItem(KEYS.STATS) || "null");
     return { ...DEFAULT_STATS, ...(s || {}) };
-  } catch {
+  } catch (err) {
+    warn("getStats", err);
     return { ...DEFAULT_STATS };
   }
 };
@@ -159,7 +176,8 @@ export const addXP = (amount) => {
 export const getLocation = () => {
   try {
     return JSON.parse(localStorage.getItem(KEYS.LOCATION) || "null");
-  } catch {
+  } catch (err) {
+    warn("getLocation", err);
     return null;
   }
 };
@@ -181,7 +199,8 @@ export const getUser = () => {
   try {
     const u = JSON.parse(localStorage.getItem(KEYS.USER) || "null");
     return { ...DEFAULT_USER, ...(u || {}) };
-  } catch {
+  } catch (err) {
+    warn("getUser", err);
     return { ...DEFAULT_USER };
   }
 };
@@ -204,7 +223,8 @@ export const initUser = (name) => {
 export const getHistory = () => {
   try {
     return JSON.parse(localStorage.getItem(KEYS.HISTORY) || "{}");
-  } catch {
+  } catch (err) {
+    warn("getHistory", err);
     return {};
   }
 };
@@ -236,7 +256,8 @@ const archiveDay = (dateKey) => {
     };
     saveHistory(history);
     return history[dateKey];
-  } catch {
+  } catch (err) {
+    warn("archiveDay", err);
     return null;
   }
 };

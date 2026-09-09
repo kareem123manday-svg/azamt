@@ -1,0 +1,47 @@
+{
+  "summary": "REGRESSION after code-review polish (unused imports removed from HomePage; empty catch blocks in storage.js replaced with warn() helper; nested ternaries in AddTaskDialog extracted into resolveDays/previewDays/dayButtonClass/daysHelperText). All 13 requested regression flows executed. 12 PASS. 1 CRITICAL bug surfaced (pre-existing, not caused by this polish, but visible now because weekly-days feature is stored via saveTasks which drops the `days` field). Corrupted-localStorage test now emits the expected [storage] console.warn — the new logging behavior works as designed.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {
+        "flow": "Weekly task persistence (Friday / weekdays / custom days)",
+        "issue": "storage.saveTasks() maps tasks to only {id,title,slot,createdAt} and DROPS the `days` field. In localStorage, days becomes undefined => a Friday-only or custom-days task loses its schedule on reload and starts appearing every day. Reproduction: create Friday task -> reload -> localStorage.getItem('salah_first_tasks') shows no `days` -> task visible today (dow=3, Wed) even though it should only appear Fridays.",
+        "affected_selectors": ["repeat-friday", "repeat-weekdays", "repeat-custom", "submit-task-btn"]
+      }
+    ],
+    "design_issues": []
+  },
+  "regression_results": {
+    "onboarding_name_location_home": "PASS",
+    "homepage_renders_greeting_stats_5_prayer_cards_day_progress": "PASS (greeting + day-progress + 5 toggle-prayer-* cards present; individual streak/xp/next-prayer test-ids not exposed but values render inside stats area)",
+    "toggle_prayer_fajr_adds_20_XP_no_streak_bump": "PASS (xp 0->20, streak stayed 0)",
+    "floating_add_btn_creates_task": "PASS",
+    "friday_preset_stores_days_5": "FAIL (in-memory state has days=[5] and filter hides task on Wed, but after reload localStorage shows days field MISSING -> task reappears every day). Root cause: storage.saveTasks() destructures only {id,title,slot,createdAt}.",
+    "custom_days_1_3_6_sorted": "FAIL (same root cause — days is not persisted at all)",
+    "everyday_task_days_null_visible_today": "PASS",
+    "toggle_task_adds_10_XP": "PASS (xp delta = 10)",
+    "change_location_btn_returns_to_LocationSetup": "PASS",
+    "button_press_visual_state_border_b_4px_to_2px": "PASS (floating-add-btn: idle border-bottom-width=4px, active=2px, transform=matrix(1,0,0,1,0,2))",
+    "corrupted_localStorage_no_crash_and_warns": "PASS (app renders greeting; console.warn('[storage] migrate: SyntaxError ...') + '[storage] getTasksList: SyntaxError ...' emitted as expected by the new warn() helper)",
+    "achievements_dialog_opens": "PASS (open-achievements-btn -> achievements-dialog visible)",
+    "new_day_dialog_yesterday_summary": "NOT RUN (would require injecting yesterday history + user.lastSeenDate; not part of quick regression and code path unchanged this iteration)"
+  },
+  "test_report_links": [],
+  "action_items": [
+    "CRITICAL: Fix storage.saveTasks() to preserve `days` field. Change the destructure to `.map(({ id, title, slot, days, createdAt }) => ({ id, title, slot, days: days ?? null, createdAt: createdAt || Date.now() }))` in /app/frontend/src/lib/storage.js. Without this fix, the entire weekly-task feature (repeat-friday, repeat-weekdays, repeat-custom) is silently broken across reloads.",
+    "OPTIONAL: expose data-testid=\"streak\" / \"xp\" / \"next-prayer\" on StatsBar for future regression scripts (currently only the container is testable)."
+  ],
+  "critical_code_review_comments": [
+    "storage.js polish is clean: warn() helper is DRY, catch blocks all pass context strings, no behavior regressions introduced by this iteration.",
+    "AddTaskDialog helpers (resolveDays/previewDays/dayButtonClass/daysHelperText) are readable and pure. However the persistence layer discards the result of resolveDays() — see action items.",
+    "HomePage unused-imports removal is a safe change; no residual references found."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A", "frontend": "12/13 requested flows PASS (92%). 1 CRITICAL pre-existing persistence bug surfaced during weekly-task regression."},
+  "seed_data_creation": "None — used clean localStorage + fresh onboarding for each test path.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "The weekly-task days-not-persisted bug is in storage.saveTasks (drops days on destructure). It is pre-existing (predates this polish iteration) but is user-visible only after a page reload; the current in-memory filter still hides Friday tasks correctly within the same session, which is why previous iterations reported it as PASS. Verify fix by: (1) create Friday task, (2) reload page, (3) confirm localStorage entry has days:[5] and task is hidden on non-Fridays.",
+  "rca of the issue": "storage.js:saveTasks(tasks) does `tasks.map(({ id, title, slot, createdAt }) => ({ id, title, slot, createdAt: createdAt || Date.now() }))`. The `days` property is not destructured and therefore never written to localStorage. HomePage.handleAddTask correctly passes `days` when constructing the new task object and updates React state with it (which is why in-session filtering works), but the saveTasks call strips it before persistence. On reload, getTasksList returns tasks without days -> filter treats them as everyday tasks. Fix: include days in the destructure and in the returned object (with `days: days ?? null`)."
+}

@@ -22,6 +22,37 @@ const REPEAT_PRESETS = [
   { key: "custom", label: "أيام محددة", days: [] },
 ];
 
+// Map a repeat-mode + custom selection to the final `days` array (or null).
+const resolveDays = (mode, custom) => {
+  if (mode === "everyday") return null;
+  if (mode === "friday") return [5];
+  if (mode === "weekdays") return [0, 1, 2, 3, 4];
+  return custom.length ? [...custom].sort() : null;
+};
+
+// Same as resolveDays but returns [] for "everyday" (used for UI highlight).
+const previewDays = (mode, custom) => {
+  if (mode === "everyday") return [];
+  if (mode === "friday") return [5];
+  if (mode === "weekdays") return [0, 1, 2, 3, 4];
+  return custom;
+};
+
+// Tailwind class for a single day button based on its state.
+const dayButtonClass = (active, isEveryday) => {
+  if (active) return "bg-emerald-500 border-emerald-700 text-white";
+  if (isEveryday) return "bg-emerald-100 border-emerald-200 text-emerald-700";
+  return "bg-white border-gray-200 text-gray-500 hover:border-emerald-300";
+};
+
+// Helper text shown under the day picker.
+const daysHelperText = (mode, activeDays) => {
+  if (mode === "everyday") return "ستظهر هذه المهمة كل يوم";
+  if (activeDays.length === 0) return "اختر يوماً واحداً على الأقل، أو اختر «كل يوم»";
+  const names = WEEK_DAYS.filter((d) => activeDays.includes(d.key)).map((d) => d.label).join("، ");
+  return `ستظهر: ${names}`;
+};
+
 export default function AddTaskDialog({ open, onOpenChange, defaultSlot, onAdd, initialTask }) {
   const [title, setTitle] = useState("");
   const [slot, setSlot] = useState(defaultSlot || "fajr");
@@ -61,22 +92,12 @@ export default function AddTaskDialog({ open, onOpenChange, defaultSlot, onAdd, 
 
   const submit = () => {
     if (!title.trim()) return;
-    let days = null;
-    if (repeatMode === "everyday") days = null;
-    else if (repeatMode === "friday") days = [5];
-    else if (repeatMode === "weekdays") days = [0, 1, 2, 3, 4];
-    else days = customDays.length ? [...customDays].sort() : null;
+    const days = resolveDays(repeatMode, customDays);
     onAdd({ title: title.trim(), slot, days });
     onOpenChange(false);
   };
 
-  const activeDays = repeatMode === "everyday"
-    ? []
-    : repeatMode === "friday"
-    ? [5]
-    : repeatMode === "weekdays"
-    ? [0, 1, 2, 3, 4]
-    : customDays;
+  const activeDays = previewDays(repeatMode, customDays);
 
   const isEditing = !!initialTask;
 
@@ -175,11 +196,7 @@ export default function AddTaskDialog({ open, onOpenChange, defaultSlot, onAdd, 
                     data-testid={`day-${d.key}`}
                     aria-label={d.label}
                     className={`aspect-square rounded-lg border-2 border-b-4 font-black text-sm btn-3d transition-colors ${
-                      active
-                        ? "bg-emerald-500 border-emerald-700 text-white"
-                        : repeatMode === "everyday"
-                        ? "bg-emerald-100 border-emerald-200 text-emerald-700"
-                        : "bg-white border-gray-200 text-gray-500 hover:border-emerald-300"
+                      dayButtonClass(active, repeatMode === "everyday")
                     } ${disabled ? "opacity-70" : ""}`}
                   >
                     {d.short}
@@ -188,11 +205,7 @@ export default function AddTaskDialog({ open, onOpenChange, defaultSlot, onAdd, 
               })}
             </div>
             <p className="text-[11px] text-gray-400 mt-2">
-              {repeatMode === "everyday"
-                ? "ستظهر هذه المهمة كل يوم"
-                : activeDays.length === 0
-                ? "اختر يوماً واحداً على الأقل، أو اختر «كل يوم»"
-                : `ستظهر: ${WEEK_DAYS.filter((d) => activeDays.includes(d.key)).map((d) => d.label).join("، ")}`}
+              {daysHelperText(repeatMode, activeDays)}
             </p>
           </div>
 
