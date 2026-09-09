@@ -286,9 +286,9 @@ export default function HomePage({ user, location, onChangeLocation, onChangeUse
         <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <img
-              src="https://static.prod-images.emergentagent.com/jobs/3db45a41-af67-44ef-b123-f48c15dbd477/images/320e1e78428b4201bf3882ef0bea0895701c1a18547a4e5452505a025d98ba89.png"
-              alt="logo"
-              className="w-10 h-10 object-contain"
+              src="https://customer-assets-7cd3h4nn.emergentagent.net/job_salah-first-daily/artifacts/eajow6kq_ChatGPT%20Image%20Sep%209%2C%202026%2C%2011_57_37%20AM.png"
+              alt="عَزَمْتَ"
+              className="w-11 h-11 object-contain"
             />
             <div>
               <button

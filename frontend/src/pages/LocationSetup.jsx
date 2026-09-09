@@ -85,12 +85,12 @@ export default function LocationSetup({ onLocationSet }) {
         <div className="bg-white border-2 border-gray-200 border-b-4 rounded-3xl p-6 md:p-8 shadow-sm">
           <div className="flex flex-col items-center text-center mb-6">
             <img
-              src="https://static.prod-images.emergentagent.com/jobs/3db45a41-af67-44ef-b123-f48c15dbd477/images/320e1e78428b4201bf3882ef0bea0895701c1a18547a4e5452505a025d98ba89.png"
-              alt="منظم الصلاة"
-              className="w-28 h-28 md:w-32 md:h-32 object-contain mb-3"
+              src="https://customer-assets-7cd3h4nn.emergentagent.net/job_salah-first-daily/artifacts/eajow6kq_ChatGPT%20Image%20Sep%209%2C%202026%2C%2011_57_37%20AM.png"
+              alt="عَزَمْتَ"
+              className="w-40 h-40 md:w-48 md:h-48 object-contain mb-3"
               data-testid="welcome-mascot"
             />
-            <h1 className="text-3xl md:text-4xl font-black text-gray-800 mb-2">منظم الصلاة</h1>
+            <h1 className="text-3xl md:text-4xl font-black text-gray-800 mb-2">عَزَمْتَ</h1>
             <p className="text-gray-500 text-base md:text-lg leading-relaxed">
               رتّب يومك حول الصلوات الخمس
               <br />
