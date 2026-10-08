@@ -6,8 +6,8 @@ import { Input } from "@/components/ui/input";
 import { saveLocation } from "@/lib/storage";
 import { toast } from "sonner";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
+// Static-site mode: validate against the free public Aladhan API directly.
+const ALADHAN = "https://api.aladhan.com/v1";
 
 const POPULAR_CITIES = [
   { city: "Makkah", country: "Saudi Arabia", label: "مكة المكرمة" },
@@ -35,7 +35,7 @@ export default function LocationSetup({ onLocationSet }) {
       async (pos) => {
         try {
           const { latitude, longitude } = pos.coords;
-          await axios.get(`${API}/prayer-times`, { params: { latitude, longitude, method: 4 } });
+          await axios.get(`${ALADHAN}/timings`, { params: { latitude, longitude, method: 4 } });
           const loc = { type: "coords", latitude, longitude, label: "موقعك الحالي" };
           saveLocation(loc);
           toast.success("تم تحديد موقعك بنجاح");
@@ -57,7 +57,7 @@ export default function LocationSetup({ onLocationSet }) {
   const handleCityPick = async (entry) => {
     setLoading(true);
     try {
-      await axios.get(`${API}/prayer-times/by-city`, {
+      await axios.get(`${ALADHAN}/timingsByCity`, {
         params: { city: entry.city, country: entry.country, method: 4 },
       });
       const loc = { type: "city", city: entry.city, country: entry.country, label: entry.label };

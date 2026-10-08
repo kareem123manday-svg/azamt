@@ -30,8 +30,25 @@ import StatsBar from "@/components/StatsBar";
 import AchievementsPanel from "@/components/AchievementsPanel";
 import Confetti from "@/components/Confetti";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
+// Static-site mode: call the free public Aladhan API directly (same source the backend proxied).
+const ALADHAN = "https://api.aladhan.com/v1";
+const toTimesShape = (data, method, extra = {}) => {
+  const t = data.timings || {};
+  const d = data.date || { gregorian: {}, hijri: { month: {} } };
+  const hhmm = (s) => String(s || "").split(" ")[0];
+  return {
+    fajr: hhmm(t.Fajr),
+    sunrise: hhmm(t.Sunrise),
+    dhuhr: hhmm(t.Dhuhr),
+    asr: hhmm(t.Asr),
+    maghrib: hhmm(t.Maghrib),
+    isha: hhmm(t.Isha),
+    date_gregorian: d.gregorian.date,
+    date_hijri: `${d.hijri.day} ${d.hijri.month.ar} ${d.hijri.year}`,
+    method,
+    ...extra,
+  };
+};
 
 const ACHIEVEMENTS = [
   { id: "first_prayer", title: "البداية المباركة", desc: "أكمل أول صلاة", check: (s) => s.totalPrayersDone >= 1 },
@@ -61,13 +78,20 @@ export default function HomePage({ user, location, onChangeLocation, onChangeUse
     const fetchTimes = async () => {
       setLoading(true);
       try {
-        const url = location.type === "coords" ? `${API}/prayer-times` : `${API}/prayer-times/by-city`;
-        const params =
-          location.type === "coords"
-            ? { latitude: location.latitude, longitude: location.longitude, method: 4 }
-            : { city: location.city, country: location.country, method: 4 };
-        const res = await axios.get(url, { params });
-        setTimes(res.data);
+        let res;
+        if (location.type === "coords") {
+          res = await axios.get(`${ALADHAN}/timings`, {
+            params: { latitude: location.latitude, longitude: location.longitude, method: 4 },
+          });
+          setTimes(toTimesShape(res.data.data, 4));
+        } else {
+          res = await axios.get(`${ALADHAN}/timingsByCity`, {
+            params: { city: location.city, country: location.country, method: 4 },
+          });
+          setTimes(
+            toTimesShape(res.data.data, 4, { city: location.city, country: location.country })
+          );
+        }
       } catch (e) {
         toast.error("تعذّر جلب أوقات الصلاة");
       } finally {
